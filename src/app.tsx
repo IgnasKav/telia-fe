@@ -1,13 +1,11 @@
-import { useState } from 'react'
-import css from './app.module.scss'
+import { MantineProvider, Text } from '@mantine/core';
 
 function App() {
-
   return (
-    <>
-    hello
-    </>
-  )
+      <MantineProvider withGlobalStyles withNormalizeCSS>
+          <Text>Welcome to Mantine!</Text>
+      </MantineProvider>
+  );
 }
 
-export default App
+export default App;
