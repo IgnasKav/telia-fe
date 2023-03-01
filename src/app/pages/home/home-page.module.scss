@@ -1,3 +1,20 @@
-.text {
-    color: red;
+.appContainer {
+    max-width: 1000px;
+    margin: 10px auto;
+    padding: 0 10px;
+
+    .searchInput {
+        width: 600px;
+        margin: 0 auto;
+    }
+    .breedList {
+        margin-top: 20px;
+
+        .breed {
+            margin-top: 10px;
+        }
+    }
+    .pagination {
+        margin-top: 20px;
+    }
 }
