@@ -27,6 +27,7 @@
     "rules": {
         "react/jsx-indent": [2, 4],
         "react/react-in-jsx-scope": 0,
-        "react/jsx-props-no-spreading": 0
+        "react/jsx-props-no-spreading": 0,
+        "no-plusplus": 0
     }
 }
