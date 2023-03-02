@@ -3,7 +3,7 @@ interface Weight {
     metric: string;
 }
 
-export interface CatBreed {
+export interface CatBreedModel {
     weight: Weight;
     id: string;
     name: string;
@@ -41,4 +41,9 @@ export interface CatBreed {
     wikipedia_url?: string;
     hypoallergenic: number;
     reference_image_id?: string;
+}
+
+export enum CatBreedSortFields {
+    id = 'id',
+    name = 'name',
 }

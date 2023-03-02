@@ -37,7 +37,7 @@ export default function CatBreedTableSkeleton() {
         >
             <thead>
                 <tr>
-                    <th className={css.nameColumn}>Breed name</th>
+                    <th className={css.skeletonNameColumn}>Breed name</th>
                     <th>Description</th>
                     <th className={css.lifeSpanColumn}>Life span</th>
                     <th>Weight</th>

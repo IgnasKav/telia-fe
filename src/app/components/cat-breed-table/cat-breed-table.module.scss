@@ -1,9 +1,25 @@
 .lifeSpanColumn {
     width: 84px;
 }
-.nameColumn {
-    width: 104px;
+.skeletonNameColumn {
+    width: 138px;;
 }
 .skeletonRow {
     height: 87px;
 }
+
+.th {
+    width: 138px;
+    padding: 0!important;
+
+    &> button {
+        height: 43px;
+        padding: 0 10px;
+    }
+    .sortText {
+        font-weight: bold;
+        color: #495057;
+        font-size: 14px;
+    }
+}
+

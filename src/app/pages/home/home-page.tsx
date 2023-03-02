@@ -5,9 +5,11 @@ import { Center, Pagination } from '@mantine/core';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import SearchInput from '../../components/search-input/search-input';
 import css from './home-page.module.scss';
-import { CatBreed } from '../../models/CatBreed';
+import { CatBreedModel, CatBreedSortFields } from '../../models/CatBreed.model';
 import CatBreedTable from '../../components/cat-breed-table/cat-breed-table';
 import CatBreedTableSkeleton from '../../components/cat-breed-table/cat-breed-table-skeleton';
+import { SortModel } from '../../models/Sort.model';
+import { sortData } from '../../services/sort';
 
 export default function HomePage() {
     const navigate = useNavigate();
@@ -15,12 +17,13 @@ export default function HomePage() {
     const [searchParams] = useSearchParams();
 
     const [searchText, setSearchText] = useState<string>('');
-    const [displayData, setDisplayData] = useState<CatBreed[]>();
+    const [displayData, setDisplayData] = useState<CatBreedModel[]>();
     const [activePageNumber, setActivePageNumber] = useState<number>(1);
     const [totalPages, setTotalPages] = useState<number>(0);
+    const [sortState, setSortState] = useState<SortModel | null>(null);
 
-    const { isLoading, data } = useQuery('cat-breeds', async () => {
-        const response = await axios.get<CatBreed[]>(
+    const { isLoading, data: queryData } = useQuery('cat-breeds', async () => {
+        const response = await axios.get<CatBreedModel[]>(
             'https://api.thecatapi.com/v1/breeds'
         );
 
@@ -29,26 +32,46 @@ export default function HomePage() {
 
     const handleNavigation = (
         pageNumber: number,
-        searchValue: string | null
+        searchValue: string | null,
+        sort: SortModel | null
     ) => {
         let url = `/${pageNumber}`;
-        if (searchValue) {
+
+        if (searchValue && sort) {
             url += `?search=${searchValue}`;
+            url += `&sort=${sort.field}&direction=${sort.direction}`;
+        } else if (searchValue) {
+            url += `?search=${searchValue}`;
+        } else if (sort) {
+            url += `?sort=${sort.field}&direction=${sort.direction}`;
         }
         navigate(url);
     };
 
-    const onSearch = (searchValue: string) => {
-        handleNavigation(1, searchValue);
+    const handleSearch = (searchValue: string) => {
+        handleNavigation(1, searchValue, sortState);
     };
 
-    const onPageChange = (pageNumber: number) => {
-        const searchValue = searchParams.get('search');
-        handleNavigation(pageNumber, searchValue);
+    const handlePageChange = (pageNumber: number) => {
+        handleNavigation(pageNumber, searchText, sortState);
+    };
+
+    const handleSortChange = (sort: SortModel) => {
+        handleNavigation(activePageNumber, searchText, sort);
     };
 
     useEffect(() => {
         const searchParam = searchParams.get('search');
+        const sortName = searchParams.get('sort') as CatBreedSortFields;
+        const sortDirection = searchParams.get('direction');
+
+        if (sortName && sortDirection) {
+            const sort: SortModel = {
+                field: sortName,
+                direction: sortDirection,
+            };
+            setSortState(sort);
+        }
         setSearchText(searchParam ?? '');
     }, [searchParams]);
 
@@ -71,8 +94,8 @@ export default function HomePage() {
     }, [pageNumberUrlParam, totalPages, navigate]);
 
     useEffect(() => {
-        if (data && activePageNumber) {
-            let filteredData = data;
+        if (queryData && activePageNumber) {
+            let filteredData = queryData;
 
             if (searchText) {
                 filteredData = filteredData.filter((catBreed) =>
@@ -80,6 +103,10 @@ export default function HomePage() {
                         .toLowerCase()
                         .includes(searchText.toLowerCase())
                 );
+            }
+
+            if (sortState) {
+                filteredData = sortData(filteredData, sortState);
             }
 
             const dataSlice = filteredData?.slice(
@@ -91,26 +118,29 @@ export default function HomePage() {
             );
             setDisplayData(dataSlice);
         }
-    }, [data, activePageNumber, searchText]);
+    }, [queryData, activePageNumber, searchText, sortState]);
 
     return (
         <div className={`${css.appContainer}`}>
             <SearchInput
                 value={searchText}
                 props={{ className: `${css.searchInput}` }}
-                handleSubmit={(value) => onSearch(value)}
+                handleSubmit={(value) => handleSearch(value)}
             />
             <div className={css.breedList}>
                 {isLoading ? (
                     <CatBreedTableSkeleton />
                 ) : (
-                    <CatBreedTable catBreeds={displayData} />
+                    <CatBreedTable
+                        onSortChange={handleSortChange}
+                        catBreeds={displayData}
+                    />
                 )}
             </div>
             <Center className={css.pagination}>
                 <Pagination
                     page={activePageNumber}
-                    onChange={(pageN) => onPageChange(pageN)}
+                    onChange={(pageN) => handlePageChange(pageN)}
                     total={totalPages}
                 />
             </Center>
