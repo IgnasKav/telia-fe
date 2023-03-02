@@ -2,7 +2,7 @@ import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
 import { Center, Pagination } from '@mantine/core';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import SearchInput from '../../components/search-input/search-input';
 import css from './home-page.module.scss';
 import { CatBreed } from '../../models/CatBreed';
@@ -12,6 +12,7 @@ import CatBreedTableSkeleton from '../../components/cat-breed-table/cat-breed-ta
 export default function HomePage() {
     const navigate = useNavigate();
     const { pageNumber: pageNumberUrlParam } = useParams();
+    const [searchParams] = useSearchParams();
 
     const [searchText, setSearchText] = useState<string>('');
     const [displayData, setDisplayData] = useState<CatBreed[]>();
@@ -23,9 +24,33 @@ export default function HomePage() {
             'https://api.thecatapi.com/v1/breeds'
         );
 
-        setTotalPages(response.data ? Math.ceil(response.data.length / 10) : 1);
         return response.data;
     });
+
+    const handleNavigation = (
+        pageNumber: number,
+        searchValue: string | null
+    ) => {
+        let url = `/${pageNumber}`;
+        if (searchValue) {
+            url += `?search=${searchValue}`;
+        }
+        navigate(url);
+    };
+
+    const onSearch = (searchValue: string) => {
+        handleNavigation(1, searchValue);
+    };
+
+    const onPageChange = (pageNumber: number) => {
+        const searchValue = searchParams.get('search');
+        handleNavigation(pageNumber, searchValue);
+    };
+
+    useEffect(() => {
+        const searchParam = searchParams.get('search');
+        setSearchText(searchParam ?? '');
+    }, [searchParams]);
 
     useEffect(() => {
         if (!pageNumberUrlParam || !totalPages) {
@@ -47,19 +72,33 @@ export default function HomePage() {
 
     useEffect(() => {
         if (data && activePageNumber) {
-            const dataSlice = data?.slice(
+            let filteredData = data;
+
+            if (searchText) {
+                filteredData = filteredData.filter((catBreed) =>
+                    catBreed.name
+                        .toLowerCase()
+                        .includes(searchText.toLowerCase())
+                );
+            }
+
+            const dataSlice = filteredData?.slice(
                 activePageNumber * 10 - 10,
                 activePageNumber * 10
             );
+            setTotalPages(
+                filteredData ? Math.ceil(filteredData.length / 10) : 1
+            );
             setDisplayData(dataSlice);
         }
-    }, [data, activePageNumber]);
+    }, [data, activePageNumber, searchText]);
 
     return (
         <div className={`${css.appContainer}`}>
             <SearchInput
+                value={searchText}
                 props={{ className: `${css.searchInput}` }}
-                handleSubmit={(value) => setSearchText(value)}
+                handleSubmit={(value) => onSearch(value)}
             />
             <div className={css.breedList}>
                 {isLoading ? (
@@ -71,7 +110,7 @@ export default function HomePage() {
             <Center className={css.pagination}>
                 <Pagination
                     page={activePageNumber}
-                    onChange={(pageN) => navigate(`/${pageN}`)}
+                    onChange={(pageN) => onPageChange(pageN)}
                     total={totalPages}
                 />
             </Center>

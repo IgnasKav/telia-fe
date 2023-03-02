@@ -5,27 +5,29 @@ import {
     useMantineTheme,
 } from '@mantine/core';
 import { IconSearch, IconArrowRight } from '@tabler/icons-react';
-import { ChangeEvent, FormEvent, useState } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 
 interface Props {
     handleSubmit: (value: string) => void;
     props: TextInputProps;
+    value: string;
 }
 
-export default function SearchInput({ handleSubmit, props }: Props) {
-    const [inputValue, setInputValue] = useState<string>('');
+export default function SearchInput({ handleSubmit, props, value }: Props) {
+    const [inputValue, setInputValue] = useState<string>(value);
     const theme = useMantineTheme();
 
-    const changeInputValue = (event: ChangeEvent<HTMLInputElement>) => {
-        const { value } = event.target;
+    useEffect(() => {
         setInputValue(value);
+    }, [value]);
+
+    const changeInputValue = (event: ChangeEvent<HTMLInputElement>) => {
+        setInputValue(event.target.value);
     };
 
     const onSubmit = (event?: FormEvent<HTMLFormElement>) => {
         event?.preventDefault();
-        if (inputValue.trim() === '') return;
         handleSubmit(inputValue);
-        setInputValue('');
     };
 
     return (
@@ -47,7 +49,7 @@ export default function SearchInput({ handleSubmit, props }: Props) {
                         <IconArrowRight size={18} stroke={1.5} />
                     </ActionIcon>
                 }
-                placeholder="Search Youtube video id"
+                placeholder="Search for cats"
                 rightSectionWidth={42}
                 {...props}
             />
