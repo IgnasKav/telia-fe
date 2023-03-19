@@ -11,16 +11,62 @@ import CatBreedTableSkeleton from '../../components/cat-breed-table/cat-breed-ta
 import { SortModel } from '../../models/Sort.model';
 import { sortData } from '../../services/sort';
 
-export default function HomePage() {
+export const useNavigation = (totalPages: number) => {
     const navigate = useNavigate();
     const { pageNumber: pageNumberUrlParam } = useParams();
-    const [searchParams] = useSearchParams();
-
-    const [searchText, setSearchText] = useState<string>('');
-    const [displayData, setDisplayData] = useState<CatBreedModel[]>();
     const [activePageNumber, setActivePageNumber] = useState<number>(1);
-    const [totalPages, setTotalPages] = useState<number>(0);
+
+    useEffect(() => {
+        if (!pageNumberUrlParam || !totalPages) {
+            return;
+        }
+
+        if (!/\d+/.test(pageNumberUrlParam) || +pageNumberUrlParam <= 0) {
+            navigate('/1');
+            return;
+        }
+
+        if (+pageNumberUrlParam > totalPages) {
+            navigate(`/${totalPages}`);
+            return;
+        }
+
+        setActivePageNumber(+pageNumberUrlParam);
+    }, [pageNumberUrlParam, totalPages, navigate]);
+
+    return { activePageNumber };
+};
+
+export const useFiltering = () => {
+    const [searchParams] = useSearchParams();
+    const [searchText, setSearchText] = useState<string>('');
     const [sortState, setSortState] = useState<SortModel | null>(null);
+
+    useEffect(() => {
+        const searchParam = searchParams.get('search');
+        const sortName = searchParams.get('sort') as CatBreedSortFields;
+        const sortDirection = searchParams.get('direction');
+
+        if (sortName && sortDirection) {
+            const sort: SortModel = {
+                field: sortName,
+                direction: sortDirection,
+            };
+            setSortState(sort);
+        }
+        setSearchText(searchParam ?? '');
+    }, [searchParams]);
+
+    return { searchText, sortState };
+};
+
+export default function HomePage() {
+    const navigate = useNavigate();
+
+    const [displayData, setDisplayData] = useState<CatBreedModel[]>();
+    const [totalPages, setTotalPages] = useState<number>(0);
+    const { activePageNumber } = useNavigation(totalPages);
+    const { searchText, sortState } = useFiltering();
 
     const { isLoading, data: queryData } = useQuery('cat-breeds', async () => {
         const response = await axios.get<CatBreedModel[]>(
@@ -59,39 +105,6 @@ export default function HomePage() {
     const handleSortChange = (sort: SortModel) => {
         handleNavigation(activePageNumber, searchText, sort);
     };
-
-    useEffect(() => {
-        const searchParam = searchParams.get('search');
-        const sortName = searchParams.get('sort') as CatBreedSortFields;
-        const sortDirection = searchParams.get('direction');
-
-        if (sortName && sortDirection) {
-            const sort: SortModel = {
-                field: sortName,
-                direction: sortDirection,
-            };
-            setSortState(sort);
-        }
-        setSearchText(searchParam ?? '');
-    }, [searchParams]);
-
-    useEffect(() => {
-        if (!pageNumberUrlParam || !totalPages) {
-            return;
-        }
-
-        if (!/\d+/.test(pageNumberUrlParam) || +pageNumberUrlParam <= 0) {
-            navigate('/1');
-            return;
-        }
-
-        if (+pageNumberUrlParam > totalPages) {
-            navigate(`/${totalPages}`);
-            return;
-        }
-
-        setActivePageNumber(+pageNumberUrlParam);
-    }, [pageNumberUrlParam, totalPages, navigate]);
 
     useEffect(() => {
         if (queryData && activePageNumber) {
